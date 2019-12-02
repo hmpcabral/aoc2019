@@ -2,7 +2,7 @@
 module Day01Spec (spec) where
 
 import Test.Hspec
-import Day01Solution
+import Day01
 
 spec = do
   describe "part1" $ do

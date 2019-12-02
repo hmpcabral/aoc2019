@@ -1,7 +1,7 @@
 -- file app/Day01.hs
 module Main (main) where
 
-import Day01Solution
+import Day01
 
 main :: IO ()
 main = do

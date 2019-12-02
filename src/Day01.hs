@@ -1,8 +1,8 @@
--- file src/Day01Solution.hs
-module Day01Solution ( parseInput
-                     , part1
-                     , part2
-                     ) where
+-- file src/Day01.hs
+module Day01 ( parseInput
+             , part1
+             , part2
+             ) where
 
 parseInput :: String -> [Int]
 parseInput = map read . lines

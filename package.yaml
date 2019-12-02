@@ -19,8 +19,7 @@ library:
 
 executables:
   day01-exe:
-    main:                Day01.hs
-    source-dirs:         app
+    main:                app/Day01.hs
     ghc-options:
     - -threaded
     - -rtsopts
