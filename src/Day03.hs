@@ -1,45 +1,74 @@
+-- file src/Day03.hs
 module Day03 ( parseInput
              , part1
              , part2
              ) where
 
 import Data.List.Split (splitOn)
-import Data.HashMap.Strict (HashMap)
-import qualified Data.HashMap.Strict as H
+import Data.Set (Set)
+import qualified Data.Set as S
 
-data Direction = GoRight | GoLeft | GoUp | GoDown
-               deriving (Show)
+data Direction = Direction Int Int
 
-type Wire = [(Direction, Int)]
-type Coord = (Int, Int)
+data Coord = Coord Int Int
+           deriving (Eq, Ord)
+
+type Wire = [Direction]
 
 parseInput :: String -> [Wire]
 parseInput = map parseWire . lines
   where parseWire = map parseDir . splitOn ","
-        parseDir (x:xs) = (dir x, read xs)
-        dir x
-          | x == 'R' = GoRight
-          | x == 'L' = GoLeft
-          | x == 'U' = GoUp
-          | x == 'D' = GoDown
+        parseDir (x:xs)
+          | x == 'R' = Direction n 0
+          | x == 'L' = Direction (-n) 0
+          | x == 'U' = Direction 0 n
+          | x == 'D' = Direction 0 (-n)
+          where n = read xs
 
 part1 :: [Wire] -> Int
-part1 [v, w] = minimum . map dist . H.keys $ H.intersection (walk v) (walk w)
-  where dist (x, y) = abs x + abs y
+part1 [v, w] = minimum . map (distance origin) $ intersect v w
 
 part2 :: [Wire] -> Int
-part2 [v, w] = minimum . H.elems $ H.intersectionWith (+) (walk v) (walk w)
+part2 [v, w] = minimum . map combine $ intersect v w
+  where combine p = (stepsTo v origin p 0) + (stepsTo w origin p 0)
 
-walk :: Wire -> HashMap Coord Int
-walk w = walkFrom w (0, 0) 0 H.empty
+origin :: Coord
+origin = Coord 0 0
 
-walkFrom :: Wire -> Coord -> Int -> HashMap Coord Int -> HashMap Coord Int
-walkFrom [] _ _ m = m
-walkFrom ((d, n):ws) p s m = walkFrom ws (step p d n) (s+n) $ H.union m arm
-  where arm = H.fromList [(step p d i, s+i) | i <- [1..n]]
+intersect :: Wire -> Wire -> [Coord]
+intersect v w = S.toList $ S.intersection (walk v) (walk w)
 
-step :: Coord -> Direction -> Int -> Coord
-step (x, y) GoRight n = (x+n, y)
-step (x, y) GoLeft  n = (x-n, y)
-step (x, y) GoUp    n = (x, y+n)
-step (x, y) GoDown  n = (x, y-n)
+distance :: Coord -> Coord -> Int
+distance (Coord px py) (Coord qx qy) = abs (px - qx) + abs (py - qy)
+
+move :: Coord -> Direction -> Coord
+move (Coord x y) (Direction dx dy) = Coord (x + dx) (y + dy)
+
+walk :: Wire -> Set Coord
+walk w = walkFrom w (Coord 0 0) S.empty
+
+walkFrom :: Wire -> Coord -> Set Coord -> Set Coord
+walkFrom [] _ m = m
+walkFrom (d:ds) p m = walkFrom ds (move p d) $ S.union m leg
+  where leg = S.fromList $ steps p d
+
+steps :: Coord -> Direction -> [Coord]
+steps p (Direction dx dy) = [ move p (Direction dx' dy')
+                            | dx' <- range dx
+                            , dy' <- range dy ]
+  where range d | d < 0  = [d..(-1)]
+                | d > 0  = [1..d]
+                | d == 0 = [0]
+
+stepsTo :: Wire -> Coord -> Coord -> Int -> Int
+stepsTo (d:ds) from to acc
+  | goesThrough from d to = acc + distance from to
+  | otherwise             = stepsTo ds (move from d) to (acc + delta d)
+  where delta (Direction dx dy) = abs dx + abs dy
+
+goesThrough :: Coord -> Direction -> Coord -> Bool
+goesThrough p@(Coord px py) d (Coord qx qy)
+  = between px px' qx && between py py' qy
+  where Coord px' py' = move p d
+        between a b x | a < b     = a <= x && x <= b
+                      | otherwise = b <= x && x <= a
