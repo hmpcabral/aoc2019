@@ -6,7 +6,6 @@ module Day02 ( parseInput
              ) where
 
 import Data.Vector.Unboxed (Vector(..), fromList, (//), (!))
-import Data.List (find)
 import Data.List.Split (splitOn)
 
 type Program = Vector Int
