@@ -5,43 +5,29 @@ module Day04 ( parseInput
              ) where
 
 import Data.List.Split (splitOn)
-import Data.Set (Set)
-import qualified Data.Set as S
+import Data.List (group)
 
 parseInput :: String -> (Int, Int)
 parseInput input = (low, high)
   where [low, high] = map read $ splitOn "-" input
 
 part1 :: (Int, Int) -> Int
-part1 (low, high) = S.size . S.filter match $ nDigit 6
-  where match n = inRange low high n && hasDouble n
+part1 = countValid [monotonic . show, doubles . show]
 
 part2 :: (Int, Int) -> Int
-part2 (low, high) = S.size . S.filter match $ nDigit 6
-  where match n = inRange low high n && hasStrictDouble n
+part2 = countValid [monotonic . show, strictDoubles . show]
 
-nDigit :: Int -> Set [Int]
-nDigit n = S.fromList $ concat [aux [] dn | dn <- [1..9]]
-  where aux ds d
-          | length ds' == n = [ds']
-          | otherwise       = [d..9] >>= aux ds'
-          where ds' = d:ds
+countValid :: [Int -> Bool] -> (Int, Int) -> Int
+countValid fs = length . filter (\x -> all ($ x) fs) . range
 
-inRange :: Int -> Int -> [Int] -> Bool
-inRange low high ds = low <= n && n <= high
-  where n = sum $ zipWith (\d i -> d * 10^i) ds [0..]
+range :: (Int, Int) -> [Int]
+range (low, high) = [low..high]
 
-hasDouble :: [Int] -> Bool
-hasDouble (d:ds) = aux d ds
-  where aux y (x:xs)
-          | y == x    = True
-          | otherwise = aux x xs
-        aux _ []      = False
+monotonic :: Ord a => [a] -> Bool
+monotonic xs = all (\(x, y) -> x <= y) $ zip xs (tail xs)
 
-hasStrictDouble :: [Int] -> Bool
-hasStrictDouble (d:ds) = aux 1 d ds
-  where aux n y (x:xs)
-          | y == x    = aux (n+1) x xs
-          | n == 2    = True
-          | otherwise = aux 1 x xs
-        aux n _ []    = n == 2
+doubles :: Eq a => [a] -> Bool
+doubles = any (\xs -> length xs >= 2) . group
+
+strictDoubles :: Eq a => [a] -> Bool
+strictDoubles = any (\xs -> length xs == 2) . group
